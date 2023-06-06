@@ -1,0 +1,6 @@
+requests==2.28.2
+bs4==4.12.2
+pandas==1.5.3
+urllib3==1.26.15
+psycopg2==2.9.6
+sqlalchemy==1.4.48

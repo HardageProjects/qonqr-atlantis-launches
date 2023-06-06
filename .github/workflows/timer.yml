@@ -7,7 +7,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+    env: 
+      HOST: ${{ secrets.HOST}}
+      PORT: ${{ secrets.PORT}}
+      DATABASE: ${{ secrets.DATABASE}}
+      USER: ${{ secrets.USER}}
+      PASSWORD: ${{ secrets.PASSWORD}}
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
