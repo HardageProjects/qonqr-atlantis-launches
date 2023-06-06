@@ -30,6 +30,7 @@ for div_tag in parse.find_all('div',{'class':'col-md-12 col-xs-12'}):
 
 check = text_in_h1.find("under way")
 if check < 0:
+    print('No on-going battle at ' + timestamp)
     sys.exit()
     
 #Extract information
