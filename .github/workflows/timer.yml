@@ -17,6 +17,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        repository: qonqr-atlantis-launches/python
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -30,3 +32,4 @@ jobs:
         
     - name: Run script
       run:  qonqr-atlantis-launches.py
+      shell: sh
