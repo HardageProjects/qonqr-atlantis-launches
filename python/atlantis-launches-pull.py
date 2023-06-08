@@ -56,9 +56,9 @@ for tr_tag in parse.find_all('tr', {'class':['Swarm','Legion','Faceless']}):
     bottom_launchers.append(row)
 
 bottom_launches = [[x.replace(" ","") for x in row] + [timestamp] for row in bottom_launchers]
-print(bottom_launches)
+
 bottom_df = pd.DataFrame(bottom_launches, columns=['Rank','player','launches','faction','timestamp'])
-print(bottom_df)
+
 bottom_df = bottom_df.drop('Rank',axis=1)
 
 top_launchers = []
