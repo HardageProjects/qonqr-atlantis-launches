@@ -34,5 +34,4 @@ jobs:
           pip install -r requirements.txt
         
     - name: Run script
-      run:  python qonqr-atlantis-launches.py
-      shell: sh
+      run:  python python/qonqr-atlantis-launches.py
