@@ -3,7 +3,7 @@ name: QONQR Atlantis Launches Data Pull
 permissions:
   contents: read
 
-on:
+on: workflow_call
 
   
 jobs:
