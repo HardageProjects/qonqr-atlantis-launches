@@ -41,14 +41,24 @@ for tr_tag in parse.find_all('tr', {'class':['Swarm','Legion','Faceless']}):
     for td_tag in td_tags:
         text = td_tag.get_text()
         components = text.split()
-        row.extend(components)
+        new_components = []
+        i = 0
+        while i < len(components):
+            if i < len(components) - 1 and components[i].isdigit() and components[i+1].isdigit():
+                new_components.append(''.join(components[i:i+2]))
+                i += 2
+            else:
+                new_components.append(components[i])
+                i += 1
+        row.extend(new_components)
     faction = tr_tag.get('class')[0]
     row.append(faction)
     bottom_launchers.append(row)
 
 bottom_launches = [[x.replace(" ","") for x in row] + [timestamp] for row in bottom_launchers]
-
+print(bottom_launches)
 bottom_df = pd.DataFrame(bottom_launches, columns=['Rank','player','launches','faction','timestamp'])
+print(bottom_df)
 bottom_df = bottom_df.drop('Rank',axis=1)
 
 top_launchers = []
