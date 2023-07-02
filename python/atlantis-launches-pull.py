@@ -133,6 +133,7 @@ sorted_df.to_sql('atlantis_launches', engine, if_exists='append', index=False,sc
 
 rows_added = str(len(sorted_df))
 
+# Grab timestamp again
 end_time = datetime.now(timezone.utc)
 duration = str(end_time - start_time)
 
