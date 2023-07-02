@@ -14,6 +14,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Grab timestamp
 timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+start_time = datetime.now(timezone.utc)
 
 # Make request to go to URL
 url = requests.get('https://portal.qonqr.com/Atlantis',verify=False)
@@ -129,3 +130,13 @@ sorted_df['id'] = new_ids
 
 # Write the DataFrame to a table in the PostgreSQL database
 sorted_df.to_sql('atlantis_launches', engine, if_exists='append', index=False,schema='qonqr')
+
+rows_added = str(len(sorted_df))
+
+# Grab timestamp again
+end_time = datetime.now(timezone.utc)
+duration = str(end_time - start_time)
+
+# Log results
+print('Script completed at ' + end_time.strftime('%Y-%m-%d %H:%M:%S') + ' after running for ' + duration + '. ' + rows_added + ' rows were added.')
+sys.exit()
