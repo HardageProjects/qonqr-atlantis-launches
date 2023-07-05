@@ -23,7 +23,7 @@ bot = commands.Bot(command_prefix='!')
 
 async def chart(ctx):
     if ctx.channel.id == channel_id:
-        await.ctx.message.delete()
+        await ctx.message.delete()
 
         # Create an engine that connects to the PostgreSQL server
         engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}/{database}')
