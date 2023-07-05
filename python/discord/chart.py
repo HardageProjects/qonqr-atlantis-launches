@@ -20,6 +20,7 @@ bot = commands.Bot(command_prefix='!')
 
 ## Define a command that runs a Python script
 @bot.command(name='chart')
+print('Command received.')
 async def chart(ctx):
     if ctx.channel.id == channel_id:
         await.ctx.message.delete()
