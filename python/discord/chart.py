@@ -18,6 +18,8 @@ channel_id = 556885461210103822
 
 ## Set up Discord bot
 intents = Intents.default()
+intents.messages = True
+intents.guilds = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 ## Define a command that runs a Python script
