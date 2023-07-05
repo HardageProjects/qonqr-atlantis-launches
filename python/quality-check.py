@@ -1,6 +1,7 @@
 import psycopg2
 from sqlalchemy import create_engine
 import pandas as pd
+import os
 
 host = os.environ['HOST']
 port = os.environ['PORT']
