@@ -20,6 +20,7 @@ channel_id = 556885461210103822
 intents = Intents.default()
 intents.messages = True
 intents.guilds = True
+intents.direct_messages = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 ## Define a command that runs a Python script
