@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import discord
 from discord.ext import commands
+from discord import Intents
 import os
 
 host = os.environ['HOST']
@@ -16,7 +17,7 @@ discord_token = os.environ['DISCORD_TOKEN']
 channel_id = 556885461210103822
 
 ## Set up Discord bot
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='!', intents=Intents)
 
 ## Define a command that runs a Python script
 @bot.command(name='chart')
