@@ -16,7 +16,7 @@ discord_token = os.environ['DISCORD_TOKEN']
 channel_id = 556885461210103822
 
 ## Set up Discord bot
-bot = commands.Bot(command_prefex='!')
+bot = commands.Bot(command_prefix='!')
 
 ## Define a command that runs a Python script
 @bot.command(name='chart')
