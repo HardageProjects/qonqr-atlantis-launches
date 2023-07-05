@@ -1,1 +1,1 @@
-worker: python chart.py
+worker: python     python/discord/chart.py
