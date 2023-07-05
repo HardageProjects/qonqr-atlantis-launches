@@ -18,7 +18,7 @@ channel_id = 556885461210103822
 
 ## Set up Discord bot
 intents = Intents.default()
-bot = commands.Bot(command_prefix='!', intents=Intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 ## Define a command that runs a Python script
 @bot.command(name='chart')
