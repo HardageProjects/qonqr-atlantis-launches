@@ -4,3 +4,5 @@ pandas==1.5.3
 urllib3==1.26.15
 psycopg2==2.9.6
 sqlalchemy==1.4.48
+matplotlib==3.7.1
+discord==2.3.1
