@@ -1,10 +1,11 @@
-name: QONQR Atlantis Launches Data Pull Test
+name: Quality Check on Atlantis Launches
 
 permissions:
   contents: read
 
-on: workflow_dispatch
-
+on:
+  schedule:
+    - cron: '*/59 * * * *'
   
 jobs:
   build:
@@ -31,4 +32,4 @@ jobs:
           pip install -r requirements.txt
         
     - name: Run script
-      run:  python python/atlantis-launches-pull.py
+      run:  python python/quality-check.py
