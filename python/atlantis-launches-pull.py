@@ -29,7 +29,7 @@ for div_tag in parse.find_all('div',{'class':'col-md-12 col-xs-12'}):
     h1_tag = div_tag.find('h1')
     text_in_h1 = h1_tag.get_text(strip=True)
 
-check = text_in_h1.find(" ended")
+check = text_in_h1.find(" victorious")
 if check > 0:
     print('No on-going battle at ' + timestamp)
     sys.exit()
