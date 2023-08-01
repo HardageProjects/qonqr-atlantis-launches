@@ -1,3 +1,4 @@
+import os
 import psycopg2
 from sqlalchemy import create_engine
 import pandas as pd
@@ -6,8 +7,8 @@ import matplotlib.dates as mdates
 import discord
 from discord.ext import commands
 from discord import Intents
-import os
 
+## Load database credentials and Discord token from environment variables
 host = os.environ['HOST']
 port = os.environ['PORT']
 database = os.environ['DATABASE']
@@ -15,48 +16,92 @@ user = os.environ['USER']
 password = os.environ['PASSWORD']
 discord_token = os.environ['DISCORD_TOKEN']
 
-## Set up Discord bot
+## Set up Discord bot with intents for messages and message content
 intents = Intents.default()
 intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-## Define a command that runs a Python script
-@bot.command(name='chart')
+def create_db_engine():
+    """Create an engine that connects to the PostgreSQL server."""
+    return create_engine(f'postgresql+psycopg2://{user}:{password}@{host}/{database}')
 
-async def chart(ctx):
-    # Create an engine that connects to the PostgreSQL server
-    engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}/{database}')
+def get_data_from_db():
+    """Get the launches by faction and timestamp for the current month from the qonqr.atlantis_launches table."""
+    query = f"""
+    SELECT 
+            FACTION
+        ,   TIMESTAMP
+        ,   LAUNCHES 
+    FROM
+            qonqr.atlantis_launches 
+    WHERE   DATE_TRUNC('month',timestamp)
+        =   DATE_TRUNC('month',CURRENT_DATE)
+    """
 
-    # Define a SQL query to find the maximum existing ID value
-    query = 'SELECT FACTION, TIMESTAMP, LAUNCHES FROM qonqr.atlantis_launches WHERE DATE_TRUNC(\'month\',TIMESTAMP) = DATE_TRUNC(\'month\',CURRENT_DATE)'
-    # 'SELECT * FROM qonqr.atlantis_launches'
+    ## Create a database engine and execute the query, returning a pandas dataframe
+    engine = create_db_engine()
     with engine.begin() as conn:
-        result = pd.read_sql_query(query, conn)
+        return pd.read_sql_query(query, conn)
 
-    # Convert timestamp to datetime
-    result['timestamp'] = pd.to_datetime(result['timestamp'])
+def process_data(data):
+    ## Process the data to prepare it for plotting.
+    data['timestamp'] = pd.to_datetime(data['timestamp'])
 
-    # Group the data by faction and timestamp, then sum the launches within each group
-    grouped_data = result.groupby(['faction','timestamp'])['launches'].sum().reset_index()
+    ## Group the data by faction and timestamp, then sum the launches within each group.
+    grouped_data = data.groupby(['faction','timestamp'])['launches'].sum().reset_index()
 
-    # Pivot the data so that each faction has its own column
+    ## Pivot the data so that each faction has its own column
+    return grouped_data.pivot(index='timestamp', columns='faction', values='launches')
+
+def plot_data(data):
+    """Plot the data as a line chart and save it as an image file."""
+    ## Convert timestamp to datetime
+    data['timestamp'] = pd.to_datetime(data['timestamp'])
+
+    ## Group the data by faction and timestamp, then sum the launches within each group
+    grouped_data = data.groupby(['faction','timestamp'])['launches'].sum().reset_index()
+
+    ## Format the timestamp as YYYY-Mon-DD
+    grouped_data['timestamp'] = grouped_data['timestamp'].dt.strftime('%Y-%b-%d')
+
+    ## Pivot the data so that each faction has its own column
     pivoted_data = grouped_data.pivot(index='timestamp', columns='faction', values='launches')
 
+    ## Create a line chart with different colors for each faction
     chart = pivoted_data.plot(color=['purple','red','green'])
+
+    ## Set the title, labels and legend of the chart
     chart.set_title('Atlantis Launches Over Time')
     chart.set_xlabel('Time')
     chart.set_ylabel('Launch Count')
     chart.legend(title='Faction')
-    chart.xaxis.set_major_formatter(mdates.DateFormatter('%B %d, %y %H:%M'))
 
+    ## Format the x-axis ticks as dates
+    chart.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b-%d'))
+
+    ## Align the labels to the left of the ticks
+    for label in chart.xaxis.get_ticklabels():
+        label.set_horizontalalignment('left')
+        
+    ## Save the chart as an image file
     image = chart.get_figure()
-    image.savefig('export.png')
+    with open('export.png', 'wb') as f:
+        image.savefig(f)
 
-    ##plt.show()
+
+@bot.command(name='chart')
+async def chart(ctx):
+    """Define a command that runs a Python script to plot the data from the database and send it to Discord."""
+    ## Get the data from the database
+    data = get_data_from_db()
+    ## Process the data for plotting
+    processed_data = process_data(data)
+    ## Plot the data and save it as an image file
+    plot_data(processed_data)
+    ## Send the image file to Discord
     with open('export.png', 'rb') as f:
         await ctx.send(file=discord.File(f, 'export.png'))
-
     ## Clear command
     await ctx.message.delete()
 
