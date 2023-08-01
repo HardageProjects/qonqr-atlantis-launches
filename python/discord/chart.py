@@ -55,10 +55,6 @@ def process_data(data):
     return grouped_data.pivot(index='timestamp', columns='faction', values='launches')
 
 def plot_data(data):
-    """Plot the data as a line chart and save it as an image file."""
-    ## Convert timestamp to datetime
-    data['timestamp'] = pd.to_datetime(data['timestamp'])
-
     ## Group the data by faction and timestamp, then sum the launches within each group
     grouped_data = data.groupby(['faction','timestamp'])['launches'].sum().reset_index()
 
