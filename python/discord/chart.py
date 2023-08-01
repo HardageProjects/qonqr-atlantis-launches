@@ -55,31 +55,20 @@ def process_data(data):
     return grouped_data.pivot(index='timestamp', columns='faction', values='launches')
 
 def plot_data(data):
-    ## Group the data by faction and timestamp, then sum the launches within each group
-    grouped_data = data.groupby(['faction','timestamp'])['launches'].sum().reset_index()
-
-    ## Format the timestamp as YYYY-Mon-DD
-    grouped_data['timestamp'] = grouped_data['timestamp'].dt.strftime('%Y-%b-%d')
-
-    ## Pivot the data so that each faction has its own column
-    pivoted_data = grouped_data.pivot(index='timestamp', columns='faction', values='launches')
-
     ## Create a line chart with different colors for each faction
-    chart = pivoted_data.plot(color=['purple','red','green'])
+    chart = data.plot(color=['purple','red','green'])
 
     ## Set the title, labels and legend of the chart
     chart.set_title('Atlantis Launches Over Time')
     chart.set_xlabel('Time')
     chart.set_ylabel('Launch Count')
     chart.legend(title='Faction')
+    xmin, xmax = data.index.min(), data.index.max()
+    chart.set_xlim(xmin, xmax)
 
     ## Format the x-axis ticks as dates
     chart.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b-%d'))
 
-    ## Align the labels to the left of the ticks
-    for label in chart.xaxis.get_ticklabels():
-        label.set_horizontalalignment('left')
-        
     ## Save the chart as an image file
     image = chart.get_figure()
     with open('export.png', 'wb') as f:
