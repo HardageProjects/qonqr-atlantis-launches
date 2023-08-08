@@ -5,4 +5,5 @@ urllib3==1.26.15
 psycopg2==2.9.6
 sqlalchemy==1.4.48
 matplotlib==3.7.1
+seaborn==0.12.2
 discord==2.3.1
