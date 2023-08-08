@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import seaborn as sns
 import discord
 from discord.ext import commands
 from discord import Intents
@@ -37,6 +38,24 @@ def get_faction_data_from_db():
             qonqr.atlantis_launches 
     WHERE   DATE_TRUNC('month',timestamp)
         =   DATE_TRUNC('month',CURRENT_DATE)
+    """
+
+    ## Create a database engine and execute the query, returning a pandas dataframe
+    engine = create_db_engine()
+    with engine.begin() as conn:
+        return pd.read_sql_query(query, conn)
+
+def get_player_data_from_db():
+    """Get the launches by player, faction, and timestamp for the current month from the qonqr.atlantis_launches table."""
+    query = f"""
+    SELECT 
+            FACTION
+        ,   PLAYER
+        ,   TIMESTAMP
+        ,   LAUNCHES 
+    FROM
+            qonqr.atlantis_launches 
+    WHERE   timestamp IN (SELECT MAX(TIMESTAMP) FROM qonqr.atlantis_launches)
     """
 
     ## Create a database engine and execute the query, returning a pandas dataframe
@@ -102,6 +121,21 @@ def plot_proportional_data(data):
     with open('proportional_export.png', 'wb') as f:
         image.savefig(f)
 
+def plot_box(data):
+    ## Create a box-and-whisker plot with different colors for each faction
+    chart = sns.boxplot(data=data, x='faction', y='launches')
+
+    ## Set the title, labels and legend of the chart
+    chart.set_title('Distribution of Player Launches Within Each Faction')
+    chart.set_xlabel('Faction')
+    chart.set_ylabel('Launch Count')
+    plt.yscale('log')
+
+    ## Save the chart as an image file
+    image = chart.get_figure()
+    with open('export_box.png', 'wb') as f:
+        image.savefig(f)
+
 @bot.command(name='chart')
 async def chart(ctx):
     """Define a command that runs a Python script to plot the data from the database and send it to Discord."""
@@ -129,6 +163,19 @@ async def proportional_chart(ctx):
     ## Send the image file to Discord
     with open('proportional_export.png', 'rb') as f:
         await ctx.send(file=discord.File(f, 'proportional_export.png'))
+    ## Clear command
+    await ctx.message.delete()
+
+@bot.command(name='box')
+async def box(ctx):
+    """Define a command that runs a Python script to create a box-and-whisker chart from the database and send it to Discord."""
+    ## Get the player data from the database
+    player_data = get_player_data_from_db()
+    ## Plot a box-and-whisker plot and save it as an image file
+    plot_box(player_data)
+    ## Send the image file to Discord
+    with open('export_box.png', 'rb') as f:
+        await ctx.send(file=discord.File(f, 'export_box.png'))
     ## Clear command
     await ctx.message.delete()
 
