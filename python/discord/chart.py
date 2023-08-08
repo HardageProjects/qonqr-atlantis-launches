@@ -4,7 +4,6 @@ from sqlalchemy import create_engine
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import seaborn as sns
 import discord
 from discord.ext import commands
 from discord import Intents
