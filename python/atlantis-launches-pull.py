@@ -24,6 +24,7 @@ parse = BeautifulSoup(url.text, 'html.parser')
 
 #Check if battle is on-going, and stop the script if it is over
 battle_status = []
+text_in_h1 = ''
 for div_tag in parse.find_all('div',{'class':'col-md-12 col-xs-12'}):
     # Find text within <h1> tag
     h1_tag = div_tag.find('h1')
