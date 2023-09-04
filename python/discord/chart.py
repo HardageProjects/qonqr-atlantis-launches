@@ -23,6 +23,8 @@ intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+color_dict = {'Faceless':'purple','Legion':'red','Swarm':'green'}
+
 def create_db_engine():
     """Create an engine that connects to the PostgreSQL server."""
     return create_engine(f'postgresql+psycopg2://{user}:{password}@{host}/{database}')
@@ -123,7 +125,7 @@ def plot_proportional_data(data):
 
 def plot_box(data, log_scale=False):
     ## Create a box-and-whisker plot with different colors for each faction
-    chart = sns.boxplot(data=data, x='faction', y='launches', palette=['purple','red','green'])
+    chart = sns.boxplot(data=data, x='faction', y='launches', palette=color_dict)
 
     ## Set the title, labels and legend of the chart
     chart.set_title('Distribution of Player Launches Within Each Faction')
@@ -139,7 +141,7 @@ def plot_box(data, log_scale=False):
 
 def plot_violin(data): 
     ## Create a violin plot with different colors for each faction
-    chart = sns.violinplot(data=data, x='faction', y='launches', palette=['purple','red','green'], inner="stick")
+    chart = sns.violinplot(data=data, x='faction', y='launches', palette=color_dict, inner="stick")
 
     ## Set the title, labels, and legend of the chart
     chart.set_title('Violin Plot of Player Launches Within Each Faction')
