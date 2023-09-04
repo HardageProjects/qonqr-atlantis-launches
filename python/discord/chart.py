@@ -95,7 +95,7 @@ def plot_data(data):
 
     ## Save the chart as an image file
     image = chart.get_figure()
-    with open('export.png', 'wb') as f:
+    with open('export_line.png', 'wb') as f:
         image.savefig(f)
 
 def plot_proportional_data(data):
@@ -150,7 +150,7 @@ def plot_violin(data):
 
     ## Save the chart as an image file
     image = chart.get_figure()
-    with open('export_box.png', 'wb') as f:
+    with open('export_violin.png', 'wb') as f:
         image.savefig(f)
 
 @bot.command(name='chart')
@@ -163,8 +163,8 @@ async def chart(ctx):
     ## Plot the data and save it as an image file
     plot_data(processed_data)
     ## Send the image file to Discord
-    with open('export.png', 'rb') as f:
-        await ctx.send(file=discord.File(f, 'export.png'))
+    with open('export_line.png', 'rb') as f:
+        await ctx.send(file=discord.File(f, 'export_line.png'))
     ## Clear command
     await ctx.message.delete()
 
