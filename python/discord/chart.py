@@ -137,16 +137,14 @@ def plot_box(data, log_scale=False):
     with open('export_box.png', 'wb') as f:
         image.savefig(f)
 
-def plot_violin(data, log_scale=False): 
+def plot_violin(data): 
     ## Create a violin plot with different colors for each faction
-    chart = sns.violinplot(data=data, x='faction', y='launches', palette=['purple','red','green'])
+    chart = sns.violinplot(data=data, x='faction', y='launches', palette=['purple','red','green'], inner="stick")
 
     ## Set the title, labels, and legend of the chart
     chart.set_title('Violin Plot of Player Launches Within Each Faction')
     chart.set_xlabel('Faction')
     chart.set_ylabel('Launch Count')
-    if log_scale:
-        plt.yscale('log')
 
     ## Save the chart as an image file
     image = chart.get_figure()
@@ -215,20 +213,7 @@ async def violin_plot(ctx):
     ## Get the player data from the database
     player_data = get_player_data_from_db()
     ## Plot a violin plot and save it as an image file
-    plot_violin(player_data, log_scale=False)
-    ## Send the image file to Discord
-    with open('export_box.png', 'rb') as f:
-        await ctx.send(file=discord.File(f, 'export_box.png'))
-    ## Clear command
-    await ctx.message.delete()
-
-@bot.command(name='violinlog')
-async def violin_plot(ctx):
-    """Define a command that runs a Python script to create a violin plot from the database and send it to Discord."""
-    ## Get the player data from the database
-    player_data = get_player_data_from_db()
-    ## Plot a violin plot and save it as an image file
-    plot_violin(player_data, log_scale=True)
+    plot_violin(player_data)
     ## Send the image file to Discord
     with open('export_box.png', 'rb') as f:
         await ctx.send(file=discord.File(f, 'export_box.png'))
