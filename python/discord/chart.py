@@ -98,6 +98,9 @@ def plot_data(data):
     with open('export_line.png', 'wb') as f:
         image.savefig(f)
 
+    ## Clear the figure
+    plt.clf()
+
 def plot_proportional_data(data):
     ## Create a stacked percentage chart with different colors for each faction
     data = data.apply(lambda x: x/x.sum(), axis=1)
@@ -123,7 +126,10 @@ def plot_proportional_data(data):
     with open('proportional_export.png', 'wb') as f:
         image.savefig(f)
 
-def plot_box(data, log_scale=False):
+    ## Clear the figure
+    plt.clf()
+
+def plot_box(data, log_scale):
     ## Create a box-and-whisker plot with different colors for each faction
     chart = sns.boxplot(data=data, x='faction', y='launches', palette=color_dict)
 
@@ -139,6 +145,9 @@ def plot_box(data, log_scale=False):
     with open('export_box.png', 'wb') as f:
         image.savefig(f)
 
+    ## Clear the figure
+    plt.clf()
+
 def plot_violin(data): 
     ## Create a violin plot with different colors for each faction
     chart = sns.violinplot(data=data, x='faction', y='launches', palette=color_dict, inner="stick")
@@ -152,6 +161,9 @@ def plot_violin(data):
     image = chart.get_figure()
     with open('export_violin.png', 'wb') as f:
         image.savefig(f)
+
+    ## Clear the figure
+    plt.clf()
 
 @bot.command(name='chart')
 async def chart(ctx):
