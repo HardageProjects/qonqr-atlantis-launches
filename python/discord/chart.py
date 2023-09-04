@@ -218,7 +218,7 @@ async def violin_plot(ctx):
     plot_violin(player_data)
     ## Send the image file to Discord
     with open('export_violin.png', 'rb') as f:
-        await ctx.send(file=discord.File(f, 'export_box.png'))
+        await ctx.send(file=discord.File(f, 'export_violin.png'))
     ## Clear command
     await ctx.message.delete()
 
