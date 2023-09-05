@@ -107,19 +107,41 @@ def plot_proportional_data(data):
     chart = data.plot(kind='area', stacked=True, color=['purple','red','green'])
 
     ## Set the title, labels, and legend of the chart
-    chart.set_title('Proportional Atlantis Launches Over TIme')
-    chart.set_xlabel('Time')
+    chart.set_title('Proportional Atlantis Launches Over Time')
+    chart.set_xlabel('Date')
     chart.set_ylabel('Launch Proportion')
-    chart.legend(title='Faction')
+    chart.legend(title='Faction').set_visible(False)
     xmin, xmax = data.index.min(), data.index.max()
     chart.set_xlim(xmin, xmax)
+    ## Set the y-axis limits to the exact range of the data
+    ymin, ymax = 0, 1
+    chart.set_ylim(ymin, ymax)
+
 
     ## Add horizontal lines at y=0.33 and y=0.67
     chart.axhline(y=0.33, color='gray', linestyle='--', linewidth=1)
     chart.axhline(y=0.67, color='gray', linestyle='--', linewidth=1)
 
-    ## Format x-axis ticks as dates
+    ## Add vertical lines at the start of each day and at the start of the dataset
+    start_date = data.index.min().date()
+    end_date = data.index.max().date()
+    for date in pd.date_range(start_date, end_date):
+            chart.axvline(x=date, color='black', linestyle='-', linewidth=0.25)
+
+    ## Add labels to display the proportion of each faction at the end of each day
+    for date in data.index:
+        if date == data[data.index.date == date.date()].index[-1] or date == data.index[-1]:
+            y = 0
+            for faction in data.columns:
+                proportion = data.loc[date, faction]
+                chart.annotate(f'{proportion:.0%}', xy=(date, y + proportion/2), xytext=(0, 0), textcoords='offset points', ha='right', va='top', fontsize=10, bbox=dict(facecolor='white',edgecolor='none',alpha=0.5))
+                y += proportion
+
+    ## Format x-axis ticks as dates and align the labels to the left (which should center the label)
+    chart.xaxis.set_major_locator(mdates.DayLocator())
     chart.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b-%d'))
+    for label in chart.get_xticklabels():
+        label.set_horizontalalignment('left')
 
     ## Save the chart as an image file
     image = chart.get_figure()
