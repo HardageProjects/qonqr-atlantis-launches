@@ -17,6 +17,7 @@ user = os.environ['USER']
 password = os.environ['PASSWORD']
 discord_token = os.environ['DISCORD_TOKEN']
 
+
 ## Set up Discord bot with intents for messages and message content
 intents = Intents.default()
 intents.messages = True
@@ -75,6 +76,15 @@ def process_faction_data(data):
     ## Pivot the data so that each faction has its own column
     return grouped_data.pivot(index='timestamp', columns='faction', values='launches')
 
+def process_rank_data(data):
+    ## Process the data to prepare it for plotting rank data.
+    #data.drop('timestamp', axis=1, inplace=True)
+
+    ## Rank players in each faction by their launches
+    data['rank'] = data.groupby('faction')['launches'].rank(ascending=False)
+
+    return data
+
 def plot_data(data):
     ## Create a line chart with different colors for each faction
     chart = data.plot(color=['purple','red','green'])
@@ -86,12 +96,26 @@ def plot_data(data):
     chart.legend(title='Faction')
     xmin, xmax = data.index.min(), data.index.max()
     chart.set_xlim(xmin, xmax)
+    ## Set the y-axis minimum to zero
+    chart.set_ylim([0,None])
 
     ## Add grid lines to horizontal tick marks
     chart.yaxis.grid(True, linestyle='-',linewidth=0.5)
 
     ## Format the x-axis ticks as dates
     chart.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b-%d'))
+
+    ## Add vertical lines at the start of each day and at the start of the dataset
+    start_date = data.index.min().date()
+    end_date = data.index.max().date()
+    for date in pd.date_range(start_date, end_date):
+            chart.axvline(x=date, color='black', linestyle='-', linewidth=0.25)
+
+    ## Format x-axis ticks as dates and align the labels to the left (which should center the label)
+    chart.xaxis.set_major_locator(mdates.DayLocator())
+    chart.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b-%d'))
+    for label in chart.get_xticklabels():
+        label.set_horizontalalignment('left')
 
     ## Save the chart as an image file
     image = chart.get_figure()
@@ -172,7 +196,7 @@ def plot_box(data, log_scale):
 
 def plot_violin(data): 
     ## Create a violin plot with different colors for each faction
-    chart = sns.violinplot(data=data, x='faction', y='launches', palette=color_dict, inner="stick")
+    chart = sns.violinplot(data=data, x='faction', y='launches', palette=color_dict, inner="point", cut = 0)
 
     ## Set the title, labels, and legend of the chart
     chart.set_title('Violin Plot of Player Launches Within Each Faction')
@@ -182,6 +206,26 @@ def plot_violin(data):
     ## Save the chart as an image file
     image = chart.get_figure()
     with open('export_violin.png', 'wb') as f:
+        image.savefig(f)
+
+    ## Clear the figure
+    plt.clf()
+
+def plot_rank(data, log_scale):
+    ## Create a strip plot with different colors for each faction
+    chart = sns.stripplot(x='rank', y='launches', hue='faction', data=data, palette=color_dict)
+
+    plt.title('Player Ranks by Faction')
+    plt.xlabel('Rank')
+    plt.ylabel('Launches')
+    chart.legend(title='Faction')
+    plt.xticks(ticks=range(0, int(data['rank'].max()), 10), labels=range(0,int(data['rank'].max()), 10))
+    if log_scale:
+        plt.yscale('log')
+
+    ## Save the chart as an image file
+    image = chart.get_figure()
+    with open('rank_chart.png', 'wb') as f:
         image.savefig(f)
 
     ## Clear the figure
@@ -253,6 +297,36 @@ async def violin_plot(ctx):
     ## Send the image file to Discord
     with open('export_violin.png', 'rb') as f:
         await ctx.send(file=discord.File(f, 'export_violin.png'))
+    ## Clear command
+    await ctx.message.delete()
+
+@bot.command(name='rank')
+async def rank_plot(ctx):
+    """Define a command that runs a Python script to create a strip plot from the database and send it to Discord."""
+    ## Get player data from the database
+    player_data = get_player_data_from_db()
+    ## Process the data for plotting
+    processed_data = process_rank_data(player_data)
+    ## Plot a strip plot and save it as an image file
+    plot_rank(processed_data, log_scale=False)
+    ## Send the image file to Discord
+    with open('rank_chart.png', 'rb') as f:
+        await ctx.send(file=discord.File(f, 'rank_chart.png'))
+    ## Clear command
+    await ctx.message.delete()
+
+@bot.command(name='ranklog')
+async def rank_plot(ctx):
+    """Define a command that runs a Python script to create a strip plot from the database and send it to Discord."""
+    ## Get player data from the database
+    player_data = get_player_data_from_db()
+    ## Process the data for plotting
+    processed_data = process_rank_data(player_data)
+    ## Plot a strip plot and save it as an image file
+    plot_rank(processed_data, log_scale=True)
+    ## Send the image file to Discord
+    with open('rank_chart.png', 'rb') as f:
+        await ctx.send(file=discord.File(f, 'rank_chart.png'))
     ## Clear command
     await ctx.message.delete()
 
