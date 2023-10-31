@@ -8,6 +8,11 @@ import seaborn as sns
 import discord
 from discord.ext import commands
 from discord import Intents
+import sys
+import time
+from datetime import datetime, timezone
+import requests
+from bs4 import BeautifulSoup
 
 ## Load database credentials and Discord token from environment variables
 host = os.environ['HOST']
@@ -17,7 +22,6 @@ user = os.environ['USER']
 password = os.environ['PASSWORD']
 discord_token = os.environ['DISCORD_TOKEN']
 
-
 ## Set up Discord bot with intents for messages and message content
 intents = Intents.default()
 intents.messages = True
@@ -26,6 +30,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 color_dict = {'Faceless':'purple','Legion':'red','Swarm':'green'}
 
+## Charting Functions
 def create_db_engine():
     """Create an engine that connects to the PostgreSQL server."""
     return create_engine(f'postgresql+psycopg2://{user}:{password}@{host}/{database}')
@@ -76,14 +81,6 @@ def process_faction_data(data):
     ## Pivot the data so that each faction has its own column
     return grouped_data.pivot(index='timestamp', columns='faction', values='launches')
 
-def process_rank_data(data):
-    ## Process the data to prepare it for plotting rank data.
-    #data.drop('timestamp', axis=1, inplace=True)
-
-    ## Rank players in each faction by their launches
-    data['rank'] = data.groupby('faction')['launches'].rank(ascending=False)
-
-    return data
 
 def plot_data(data):
     ## Create a line chart with different colors for each faction
@@ -96,26 +93,12 @@ def plot_data(data):
     chart.legend(title='Faction')
     xmin, xmax = data.index.min(), data.index.max()
     chart.set_xlim(xmin, xmax)
-    ## Set the y-axis minimum to zero
-    chart.set_ylim([0,None])
 
     ## Add grid lines to horizontal tick marks
     chart.yaxis.grid(True, linestyle='-',linewidth=0.5)
 
     ## Format the x-axis ticks as dates
     chart.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b-%d'))
-
-    ## Add vertical lines at the start of each day and at the start of the dataset
-    start_date = data.index.min().date()
-    end_date = data.index.max().date()
-    for date in pd.date_range(start_date, end_date):
-            chart.axvline(x=date, color='black', linestyle='-', linewidth=0.25)
-
-    ## Format x-axis ticks as dates and align the labels to the left (which should center the label)
-    chart.xaxis.set_major_locator(mdates.DayLocator())
-    chart.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b-%d'))
-    for label in chart.get_xticklabels():
-        label.set_horizontalalignment('left')
 
     ## Save the chart as an image file
     image = chart.get_figure()
@@ -132,7 +115,7 @@ def plot_proportional_data(data):
 
     ## Set the title, labels, and legend of the chart
     chart.set_title('Proportional Atlantis Launches Over Time')
-    chart.set_xlabel('Date')
+    chart.set_xlabel('Time')
     chart.set_ylabel('Launch Proportion')
     chart.legend(title='Faction').set_visible(False)
     xmin, xmax = data.index.min(), data.index.max()
@@ -196,7 +179,7 @@ def plot_box(data, log_scale):
 
 def plot_violin(data): 
     ## Create a violin plot with different colors for each faction
-    chart = sns.violinplot(data=data, x='faction', y='launches', palette=color_dict, inner="point", cut = 0)
+    chart = sns.violinplot(data=data, x='faction', y='launches', palette=color_dict, inner="stick")
 
     ## Set the title, labels, and legend of the chart
     chart.set_title('Violin Plot of Player Launches Within Each Faction')
@@ -211,25 +194,96 @@ def plot_violin(data):
     ## Clear the figure
     plt.clf()
 
-def plot_rank(data, log_scale):
-    ## Create a strip plot with different colors for each faction
-    chart = sns.stripplot(x='rank', y='launches', hue='faction', data=data, palette=color_dict)
+### Leaderboard Stats Functions
+## Define the functions to get and process player info from the website
+def get_response():
+    """Get response from the url and return a BeautifulSoup object."""
+    url = "https://portal.qonqr.com/Atlantis"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    return soup
 
-    plt.title('Player Ranks by Faction')
-    plt.xlabel('Rank')
-    plt.ylabel('Launches')
-    chart.legend(title='Faction')
-    plt.xticks(ticks=range(0, int(data['rank'].max()), 10), labels=range(0,int(data['rank'].max()), 10))
-    if log_scale:
-        plt.yscale('log')
+def process_players(players, faction, name, launches):
+    """Process players and append to the list."""
+    players.append((name, int(launches), faction))
 
-    ## Save the chart as an image file
-    image = chart.get_figure()
-    with open('rank_chart.png', 'wb') as f:
-        image.savefig(f)
+def process_top_players(players, faction, rows):
+    """Process top 3 players."""
+    for player in rows:
+        try:
+            name = player.find('h3').get_text(strip=True)
+            h5_tags = player.find_all('h5')
+            if h5_tags:
+                launches = h5_tags[-1].get_text(strip=True).replace(' ', '')
+                process_players(players, faction, name, launches)
+        except AttributeError:
+            continue  # Skip this player if any data is missing
 
-    ## Clear the figure
-    plt.clf()
+def process_other_players(players, faction, rows):
+    """Process players from 4th place onwards."""
+    for row in rows:
+        try:
+            name = row.find_all('td')[2].get_text(strip=True)
+            launches = row.find_all('td')[-1].get_text(strip=True).replace(' ', '')
+            process_players(players, faction, name, launches)
+        except AttributeError:
+            continue  # Skip this player if any data is missing
+
+
+def get_player_info(soup):
+    """Get player info from the website."""
+    leaderboard = soup.find('div', class_='col-xs-12 top-buffer').find_next_sibling()
+    tables = soup.find_all('table', class_='table table-hover table-responsive')
+    
+    factions = ['Swarm', 'Legion', 'Faceless']
+    players = []
+
+    # Process top 3 players for each faction
+    for faction in factions:
+        faction_players = leaderboard.find_all('div', class_=faction)
+        process_top_players(players, faction, faction_players)
+
+    # Process players from 4th place onwards for each faction
+    for i, table in enumerate(tables):
+        rows = table.find_all('tr')
+        process_other_players(players, factions[i], rows)
+
+    # Create a DataFrame and add a 'Rank' column
+    df = pd.DataFrame(players, columns=['Name', 'Launches', 'Faction'])
+
+    # Rank players within each faction
+    df['Rank'] = df.groupby('Faction')['Launches'].rank(method='min', ascending=False).astype(int)
+
+    return df
+
+## Define a function to print stats for each faction
+async def print_faction_stats(df):
+    faction_stats = []
+    total_launches = df['Launches'].sum()
+    
+    for faction in ['Swarm', 'Legion', 'Faceless']:
+        faction_launches = df[df['Faction'] == faction]['Launches'].sum()
+        percentage = (faction_launches / total_launches) * 100
+        faction_stats.append((faction, faction_launches, percentage))
+    
+    faction_stats.sort(key=lambda x: x[1])
+    
+    message = ""
+    for faction, launches, percentage in faction_stats:
+        message += f"{faction} launches: {launches:,} ({percentage:.0f}%).\n"
+
+    return message
+
+
+## Define a function to get stats for a specific player
+def get_player_stats(df, player_name):
+    player_stats = df[df['Name'] == player_name]
+    if not player_stats.empty:
+        return player_stats
+    else:
+        return None
+
+## Discord Bot Commands
 
 @bot.command(name='chart')
 async def chart(ctx):
@@ -300,33 +354,13 @@ async def violin_plot(ctx):
     ## Clear command
     await ctx.message.delete()
 
-@bot.command(name='rank')
-async def rank_plot(ctx):
-    """Define a command that runs a Python script to create a strip plot from the database and send it to Discord."""
-    ## Get player data from the database
-    player_data = get_player_data_from_db()
-    ## Process the data for plotting
-    processed_data = process_rank_data(player_data)
-    ## Plot a strip plot and save it as an image file
-    plot_rank(processed_data, log_scale=False)
-    ## Send the image file to Discord
-    with open('rank_chart.png', 'rb') as f:
-        await ctx.send(file=discord.File(f, 'rank_chart.png'))
-    ## Clear command
-    await ctx.message.delete()
-
-@bot.command(name='ranklog')
-async def rank_plot(ctx):
-    """Define a command that runs a Python script to create a strip plot from the database and send it to Discord."""
-    ## Get player data from the database
-    player_data = get_player_data_from_db()
-    ## Process the data for plotting
-    processed_data = process_rank_data(player_data)
-    ## Plot a strip plot and save it as an image file
-    plot_rank(processed_data, log_scale=True)
-    ## Send the image file to Discord
-    with open('rank_chart.png', 'rb') as f:
-        await ctx.send(file=discord.File(f, 'rank_chart.png'))
+## Define the commands that will run the functions and send the data to Discord
+@bot.command(name='total')
+async def get_total(ctx):
+    soup = get_response()
+    df = get_player_info(soup)
+    message = await print_faction_stats(df)
+    await ctx.send(message)
     ## Clear command
     await ctx.message.delete()
 
