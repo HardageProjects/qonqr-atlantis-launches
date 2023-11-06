@@ -232,7 +232,6 @@ def process_other_players(players, faction, rows):
 
 def get_player_info(soup):
     """Get player info from the website."""
-    leaderboard = soup.find('div', class_='col-xs-12 top-buffer').find_next_sibling()
     tables = soup.find_all('table', class_='table table-hover table-responsive')
     
     factions = ['Swarm', 'Legion', 'Faceless']
@@ -240,7 +239,7 @@ def get_player_info(soup):
 
     # Process top 3 players for each faction
     for faction in factions:
-        faction_players = leaderboard.find_all('div', class_=faction)
+        faction_players = soup.select(f"div.top-buffer>div.{faction}")
         process_top_players(players, faction, faction_players)
 
     # Process players from 4th place onwards for each faction
